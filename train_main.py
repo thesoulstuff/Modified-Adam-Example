@@ -41,11 +41,28 @@ def mlp_bp_grad(act,argList):
 
 
 def mlp_upd_gAdam(g_Wh, arglist):
-    W, mu, b1, b2, epoch = arglist
-    mu = 0.1
-    for i in range(len(g_Wh)):
-        W[i] = W[i]-mu*g_Wh[i]
-    return W
+    W, mu, b1, b2, epoch, p, q = arglist
+    mu = 0.001
+    
+    
+    for i in range(len(g_Wh)-1):
+        p_actual = b1*p[i] + (1-b1)*g_Wh[i]
+        q_actual = b2*q[i] + (1-b2)*np.square(g_Wh[i])
+        left = (np.sqrt(1-b2)/(1-b1))
+        righy = (p_actual/(np.sqrt(q_actual)+10e-8))
+        gAdam = (np.sqrt(1-b2)/(1-b1))*(p_actual/(np.sqrt(q_actual)+10e-8))
+        W[i] = W[i]-mu*gAdam
+        p[i] = p_actual
+        q[i] = q_actual
+    return W, p, q
+
+
+def mlp_pinv(H, x, C):
+    a = np.dot(x,H.T)
+    b = np.dot(H,H.T) + np.identity(len(H))/C
+    w = np.dot(a, np.linalg.inv(b))
+    w = np.atleast_2d(w)
+    return w
 
 
 def mlp_train(xe, ye, arglist):
@@ -66,6 +83,10 @@ def mlp_train(xe, ye, arglist):
                 )
     )
 
+    p = [0.0]*(len(W)-1)
+    q = [0.0]*(len(W)-1)
+    
+
     for epoch in range(epochs):
         act, z_s = mlp_foward(xe, W)
         E = ye - act[-1]
@@ -74,12 +95,15 @@ def mlp_train(xe, ye, arglist):
         print(cost)
         args = (E, W, z_s)
         g_Wh = mlp_bp_grad(act, args)
-        args = (W, mu, b1, b2, epoch)
+        args = (W, mu, b1, b2, epoch, p, q)
         
-        Whidden = mlp_upd_gAdam(g_Wh, args)
+        Whidden, p, q = mlp_upd_gAdam(g_Wh, args)
         W = Whidden
+        
+        w_output = mlp_pinv(act[-2], ye, C)
+        W[-1] = w_output
+    return W, costs
 
-    pass
 
 
 if __name__ == '__main__':
@@ -107,7 +131,7 @@ if __name__ == '__main__':
     Y = df_test.iloc[:,-1].T.values
     #feed foward epochs and shit
     args = (C, epochs, mu, b1, b2, hidden_sizes)
-    mlp_train(X, Y, args)
+    W, costs = mlp_train(X, Y, args)
 
 
     
