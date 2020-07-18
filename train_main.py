@@ -127,11 +127,15 @@ if __name__ == '__main__':
     #save the train data
     df_test.to_csv("test_data.csv", header=None, index=None)
     
-    X = df_test.iloc[:,:-1].T.values
-    Y = df_test.iloc[:,-1].T.values
+    X = df_train.iloc[:,:-1].T.values
+    Y = df_train.iloc[:,-1].T.values
     #feed foward epochs and shit
     args = (C, epochs, mu, b1, b2, hidden_sizes)
     W, costs = mlp_train(X, Y, args)
+    tmp_df = pd.DataFrame(costs)
+    tmp_df.to_csv("costos.csv", header=None)
+    np.save("pesos", W)
+
 
 
     
