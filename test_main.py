@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.metrics import r2_score, mean_squared_error
 
 
 def sigmoid(x):
@@ -22,10 +23,13 @@ def mlp_train(xe, ye, w):
     act, z_s = mlp_foward(xe, w)
     E = ye - act[-1]
     costs = []
-    costs.append(square(E).mean()) # mse
+    costs.append(np.square(E).mean()) # mse
     costs.append(np.sqrt(costs[0])) # rmse
-    costs.
-    return costs
+    costs.append(r2_score(ye, act[-1][0]))
+
+    compare = list(zip(ye, act[-1][0]))
+    
+    return costs, compare
 
 
 
@@ -39,7 +43,13 @@ if __name__ == '__main__':
     Y = df_test.iloc[:,-1].T.values
     #feed foward 
 
-    costs = mlp_train(X, Y, weights)
+    costs, compare = mlp_train(X, Y, weights)
+    with open("errores.csv", 'w') as f:
+        f.write(",".join([str(x) for x in costs]))
+
+    with open("estimados.csv", 'w') as f:
+        for real, predicted in compare:
+            f.write("{},{}\n".format(real,predicted))
 
 
 

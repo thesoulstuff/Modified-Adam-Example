@@ -92,7 +92,8 @@ def mlp_train(xe, ye, arglist):
         E = ye - act[-1]
         cost = np.square(E).mean()
         costs.append(cost)
-        print(cost)
+        if epoch%100 == 0:
+            print("epoch:",epoch,"cost:",cost)
         args = (E, W, z_s)
         g_Wh = mlp_bp_grad(act, args)
         args = (W, mu, b1, b2, epoch, p, q)
